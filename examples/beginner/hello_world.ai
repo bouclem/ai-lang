@@ -1,0 +1,51 @@
+# Premier programme en ai'lang
+# Syntaxe similaire à Python mais optimisée pour l'IA
+
+# Variables et types de base
+name = "ai'lang"
+version = 0.1
+is_awesome = True
+
+# Affichage simple
+print("Hello, World!")
+print(f"Bienvenue dans {name} version {version}")
+
+# Listes et dictionnaires
+numbers = [1, 2, 3, 4, 5]
+user_info = {
+    "name": "Développeur IA",
+    "language": "ai'lang",
+    "experience": "débutant"
+}
+
+# Boucles
+print("\nNombres:")
+for num in numbers:
+    print(f"Nombre: {num}")
+
+# Conditions
+if is_awesome:
+    print("\nai'lang est génial!")
+else:
+    print("Quelque chose ne va pas...")
+
+# Fonctions
+def greet(name):
+    return f"Salut {name}! Bienvenue en ai'lang!"
+
+# Appel de fonction
+message = greet("Développeur")
+print(f"\n{message}")
+
+# Calculs mathématiques
+result = (10 + 5) * 2 - 3
+print(f"\nRésultat du calcul: {result}")
+
+# Gestion des erreurs
+try:
+    division = 10 / 2
+    print(f"Division: {division}")
+except:
+    print("Erreur de division")
+
+print("\nProgramme terminé avec succès!")
