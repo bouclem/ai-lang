@@ -1,0 +1,199 @@
+# Exemple d'analyse de texte avec ai'lang NLP
+# Cet exemple démontre les capacités de traitement du langage naturel
+
+from nlp import (
+    TextProcessor, SentimentAnalyzer, LanguageModel,
+    TextClassifier, NamedEntityRecognizer, TextSummarizer,
+    detect_language, translate_text, bleu_score
+)
+
+# Textes d'exemple
+textes_exemple = [
+    "I love this amazing product! It's fantastic and works perfectly.",
+    "This is terrible. I hate it and it doesn't work at all.",
+    "The weather is nice today. I think I'll go for a walk in the park.",
+    "Machine learning is revolutionizing artificial intelligence applications.",
+    "Bonjour, comment allez-vous aujourd'hui? J'espère que tout va bien."
+]
+
+print("=== Analyse de Texte avec AI'Lang NLP ===")
+print()
+
+# 1. Détection de langue
+print("1. Détection de langue:")
+for i, texte in enumerate(textes_exemple):
+    langues = detect_language(texte, top_n=2)
+    print(f"Texte {i+1}: {langues[0][0]} (confiance: {langues[0][1]:.2f})")
+print()
+
+# 2. Traitement de texte de base
+print("2. Traitement de texte:")
+processeur = TextProcessor(language="en")
+
+texte_test = textes_exemple[0]
+print(f"Texte original: {texte_test}")
+
+# Tokenisation
+tokens = processeur.tokenize(texte_test)
+print(f"Tokens: {tokens}")
+
+# Suppression des mots vides
+sans_stopwords = processeur.remove_stopwords(tokens)
+print(f"Sans mots vides: {sans_stopwords}")
+
+# Stemming
+stemmed = processeur.stem_words(sans_stopwords)
+print(f"Après stemming: {stemmed}")
+
+# Extraction d'entités
+entites = processeur.extract_entities(texte_test)
+print(f"Entités trouvées: {entites}")
+print()
+
+# 3. Analyse de sentiment
+print("3. Analyse de sentiment:")
+analyseur_sentiment = SentimentAnalyzer()
+
+# Entraînement avec des exemples
+textes_entrainement = [
+    "I love this product", "This is amazing", "Fantastic quality",
+    "I hate this", "This is terrible", "Very disappointing",
+    "It's okay", "Not bad", "Average product"
+]
+labels_sentiment = [
+    "positive", "positive", "positive",
+    "negative", "negative", "negative",
+    "neutral", "neutral", "neutral"
+]
+
+analyseur_sentiment.train(textes_entrainement, labels_sentiment)
+
+for texte in textes_exemple[:3]:
+    sentiment = analyseur_sentiment.predict(texte)
+    sentiment_simple = analyseur_sentiment.analyze_sentiment_simple(texte)
+    print(f"Texte: {texte[:50]}...")
+    print(f"Sentiment prédit: {sentiment}")
+    print(f"Scores détaillés: {sentiment_simple}")
+    print()
+
+# 4. Classification de texte
+print("4. Classification de texte:")
+classificateur = TextClassifier(algorithm="naive_bayes")
+
+# Données d'entraînement pour classification par sujet
+textes_sujets = [
+    "The stock market is rising today", "Investment opportunities in tech",
+    "Football match results yesterday", "Basketball championship finals",
+    "New smartphone released", "Latest computer processor announced",
+    "Recipe for chocolate cake", "How to cook pasta perfectly"
+]
+labels_sujets = [
+    "finance", "finance",
+    "sports", "sports",
+    "technology", "technology",
+    "cooking", "cooking"
+]
+
+classificateur.train(textes_sujets, labels_sujets)
+
+texte_test_classification = "Apple announced a new iPhone with advanced AI features"
+sujet_predit = classificateur.predict(texte_test_classification)
+print(f"Texte: {texte_test_classification}")
+print(f"Sujet prédit: {sujet_predit}")
+print()
+
+# 5. Reconnaissance d'entités nommées
+print("5. Reconnaissance d'entités nommées:")
+ner = NamedEntityRecognizer()
+
+texte_entites = "John Smith works at Microsoft in Seattle. His email is john.smith@microsoft.com and his phone is 555-123-4567."
+entites_trouvees = ner.predict(texte_entites)
+print(f"Texte: {texte_entites}")
+print("Entités trouvées:")
+for entite, type_entite in entites_trouvees:
+    print(f"  {entite} -> {type_entite}")
+print()
+
+# 6. Résumé de texte
+print("6. Résumé de texte:")
+resumeur = TextSummarizer(num_sentences=2)
+
+texte_long = """
+Artificial intelligence is transforming the way we live and work. 
+Machine learning algorithms can now process vast amounts of data to identify patterns and make predictions. 
+Deep learning, a subset of machine learning, uses neural networks with multiple layers to solve complex problems. 
+Natural language processing enables computers to understand and generate human language. 
+Computer vision allows machines to interpret and analyze visual information. 
+These technologies are being applied in healthcare, finance, transportation, and many other industries. 
+As AI continues to advance, it will create new opportunities and challenges for society.
+"""
+
+resume = resumeur.predict(texte_long)
+print(f"Texte original ({len(texte_long)} caractères):")
+print(texte_long)
+print(f"\nRésumé ({len(resume)} caractères):")
+print(resume)
+print()
+
+# 7. Modèle de langue
+print("7. Modèle de langue (génération de texte):")
+modele_langue = LanguageModel(n=3)
+
+# Entraînement avec des phrases d'exemple
+phrases_entrainement = [
+    "The quick brown fox jumps over the lazy dog",
+    "Machine learning is a powerful tool for data analysis",
+    "Natural language processing helps computers understand text",
+    "Artificial intelligence will change the future of technology",
+    "Deep learning networks can solve complex problems efficiently"
+]
+
+modele_langue.train(phrases_entrainement)
+
+# Génération de texte
+seed_words = ["machine", "learning"]
+texte_genere = modele_langue.generate_text(seed_words, max_length=10)
+print(f"Mots de départ: {seed_words}")
+print(f"Texte généré: {texte_genere}")
+
+# Prédiction du mot suivant
+mots_suivants = modele_langue.predict_next_word(["artificial", "intelligence"], top_k=3)
+print(f"\nMots suivants possibles après 'artificial intelligence':")
+for mot, prob in mots_suivants:
+    print(f"  {mot}: {prob:.3f}")
+print()
+
+# 8. Traduction simple
+print("8. Traduction simple:")
+texte_anglais = "hello world"
+texte_francais = translate_text(texte_anglais, "en", "fr")
+texte_espagnol = translate_text(texte_anglais, "en", "es")
+
+print(f"Anglais: {texte_anglais}")
+print(f"Français: {texte_francais}")
+print(f"Espagnol: {texte_espagnol}")
+print()
+
+# 9. Évaluation avec métriques
+print("9. Évaluation avec métriques BLEU:")
+reference = "the quick brown fox jumps over the lazy dog"
+candidate1 = "the quick brown fox jumps over the lazy dog"  # Parfait
+candidate2 = "the brown fox jumps over the dog"  # Bon
+candidate3 = "a fast animal jumps"  # Mauvais
+
+for i, candidate in enumerate([candidate1, candidate2, candidate3], 1):
+    score = bleu_score(reference, candidate)
+    print(f"Candidat {i}: {candidate}")
+    print(f"Score BLEU: {score:.3f}")
+    print()
+
+print("=== Analyse terminée ===")
+print("\nCet exemple démontre les principales fonctionnalités NLP d'ai'lang:")
+print("- Détection de langue et traduction")
+print("- Traitement et nettoyage de texte")
+print("- Analyse de sentiment")
+print("- Classification de texte")
+print("- Reconnaissance d'entités nommées")
+print("- Résumé automatique")
+print("- Génération de texte avec modèles de langue")
+print("- Métriques d'évaluation")
