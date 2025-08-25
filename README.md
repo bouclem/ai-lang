@@ -1,16 +1,24 @@
-# ai'lang 🤖
+# AI'Lang - Langage de Programmation pour l'Intelligence Artificielle
 
-**Un langage de programmation moderne optimisé pour l'Intelligence Artificielle**
+![AI'Lang Logo](docs/assets/logo.svg)
 
-ai'lang est un langage de programmation inspiré de Python, conçu spécifiquement pour simplifier et accélérer le développement d'applications d'intelligence artificielle. Il combine la simplicité syntaxique de Python avec des performances optimisées et des bibliothèques natives intégrées.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ailang/ailang)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8+-yellow.svg)](https://python.org)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](docs/)
 
-## 🎯 Objectifs
+## 🚀 Introduction
 
-- **Syntaxe intuitive** : Familière aux développeurs Python
-- **Performances élevées** : Optimisations natives pour les calculs IA
-- **Bibliothèques intégrées** : Machine Learning, NLP et traitement de données inclus
-- **Outils de développement** : Débogage et profiling intégrés
-- **Compatibilité** : Interopérabilité avec les frameworks IA existants
+**AI'Lang** est un langage de programmation moderne spécialement conçu pour le développement d'applications d'intelligence artificielle. Il combine la simplicité syntaxique de Python avec des optimisations de performance avancées et des bibliothèques natives pour le machine learning et le traitement du langage naturel.
+
+### ✨ Caractéristiques Principales
+
+- **🐍 Syntaxe Familière** : Inspirée de Python pour une courbe d'apprentissage douce
+- **⚡ Performance Optimisée** : Compilateur avec optimisations spécifiques à l'IA
+- **🧠 Bibliothèques Natives** : ML et NLP intégrés directement dans le langage
+- **🔧 Outils Intégrés** : Débogueur et profiler de performance avancés
+- **📊 Analyse en Temps Réel** : Monitoring des performances et de l'utilisation des ressources
+- **🔗 Interopérabilité** : Compatible avec l'écosystème Python existant
 
 ## 🚀 Fonctionnalités clés
 

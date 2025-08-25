@@ -1,0 +1,476 @@
+# Exemple d'utilisation de la bibliothèque ML d'ai'lang
+# Démonstration des réseaux de neurones et des fonctionnalités ML
+
+# Importation de la bibliothèque ML
+import ml
+from ml import (
+    Dense, Dropout, BatchNormalization,
+    SGD, Adam, RMSprop,
+    MeanSquaredError, BinaryCrossentropy,
+    Accuracy, F1Score, ClassificationReport,
+    train_test_split, normalize_minmax,
+    MLPipeline, ModelValidator,
+    create_pipeline, quick_evaluate
+)
+
+# ============================================================================
+# 1. Création et préparation des données
+# ============================================================================
+
+print("=== Génération de données synthétiques ===")
+
+# Génération de données pour classification binaire
+from ml.utils import generate_synthetic_data
+
+# Données de classification
+X_class, y_class = generate_synthetic_data(
+    n_samples=1000,
+    n_features=10,
+    task_type="classification",
+    n_classes=2,
+    noise=0.1
+)
+
+print(f"Données de classification: {len(X_class)} échantillons, {len(X_class[0])} caractéristiques")
+print(f"Distribution des classes: {[y_class.count(i) for i in set(y_class)]}")
+
+# Données de régression
+X_reg, y_reg = generate_synthetic_data(
+    n_samples=800,
+    n_features=5,
+    task_type="regression",
+    noise=0.2
+)
+
+print(f"Données de régression: {len(X_reg)} échantillons, {len(X_reg[0])} caractéristiques")
+
+# ============================================================================
+# 2. Préparation des données
+# ============================================================================
+
+print("\n=== Préparation des données ===")
+
+# Division train/test pour classification
+X_train_class, X_test_class, y_train_class, y_test_class = train_test_split(
+    X_class, y_class, test_size=0.2, random_state=42
+)
+
+# Division train/test pour régression
+X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(
+    X_reg, y_reg, test_size=0.2, random_state=42
+)
+
+# Normalisation des données
+X_train_class_norm = normalize_minmax(X_train_class)
+X_test_class_norm = normalize_minmax(X_test_class)
+
+X_train_reg_norm = normalize_minmax(X_train_reg)
+X_test_reg_norm = normalize_minmax(X_test_reg)
+
+print(f"Données d'entraînement classification: {len(X_train_class_norm)}")
+print(f"Données de test classification: {len(X_test_class_norm)}")
+print(f"Données d'entraînement régression: {len(X_train_reg_norm)}")
+print(f"Données de test régression: {len(X_test_reg_norm)}")
+
+# ============================================================================
+# 3. Création d'un réseau de neurones simple
+# ============================================================================
+
+print("\n=== Création d'un réseau de neurones pour classification ===")
+
+class SimpleNeuralNetwork:
+    """
+    Réseau de neurones simple utilisant les couches d'ai'lang.
+    """
+    
+    def __init__(self, input_size, hidden_sizes, output_size, activation="relu"):
+        self.layers = []
+        self.optimizer = None
+        self.loss_function = None
+        self.fitted = False
+        
+        # Construction du réseau
+        prev_size = input_size
+        
+        # Couches cachées
+        for hidden_size in hidden_sizes:
+            layer = Dense(prev_size, hidden_size, activation=activation)
+            layer.build()
+            self.layers.append(layer)
+            
+            # Dropout pour régularisation
+            dropout = Dropout(rate=0.2)
+            self.layers.append(dropout)
+            
+            prev_size = hidden_size
+        
+        # Couche de sortie
+        output_activation = "sigmoid" if output_size == 1 else "softmax"
+        output_layer = Dense(prev_size, output_size, activation=output_activation)
+        output_layer.build()
+        self.layers.append(output_layer)
+    
+    def compile(self, optimizer="adam", loss="binary_crossentropy", learning_rate=0.001):
+        """
+        Configure l'optimiseur et la fonction de perte.
+        """
+        if optimizer == "adam":
+            self.optimizer = Adam(learning_rate=learning_rate)
+        elif optimizer == "sgd":
+            self.optimizer = SGD(learning_rate=learning_rate)
+        elif optimizer == "rmsprop":
+            self.optimizer = RMSprop(learning_rate=learning_rate)
+        else:
+            self.optimizer = Adam(learning_rate=learning_rate)
+        
+        if loss == "binary_crossentropy":
+            self.loss_function = BinaryCrossentropy()
+        elif loss == "mse":
+            self.loss_function = MeanSquaredError()
+        else:
+            self.loss_function = BinaryCrossentropy()
+    
+    def forward(self, X):
+        """
+        Propagation avant.
+        """
+        current_input = X
+        
+        for layer in self.layers:
+            current_input = layer.forward(current_input)
+        
+        return current_input
+    
+    def fit(self, X, y, epochs=100, batch_size=32, verbose=True):
+        """
+        Entraîne le réseau de neurones.
+        """
+        if self.optimizer is None or self.loss_function is None:
+            raise ValueError("Model must be compiled before training")
+        
+        n_samples = len(X)
+        n_batches = (n_samples + batch_size - 1) // batch_size
+        
+        for epoch in range(epochs):
+            total_loss = 0.0
+            
+            # Entraînement par mini-batches
+            for batch_idx in range(n_batches):
+                start_idx = batch_idx * batch_size
+                end_idx = min(start_idx + batch_size, n_samples)
+                
+                # Batch actuel
+                X_batch = X[start_idx:end_idx]
+                y_batch = y[start_idx:end_idx]
+                
+                # Propagation avant
+                predictions = self.forward(X_batch)
+                
+                # Calcul de la perte
+                loss = self.loss_function.compute_loss(y_batch, predictions)
+                total_loss += loss
+                
+                # Rétropropagation (simplifiée)
+                loss_gradient = self.loss_function.compute_gradient(y_batch, predictions)
+                
+                # Mise à jour des poids (simplifiée)
+                for layer in reversed(self.layers):
+                    if hasattr(layer, 'weights') and hasattr(layer, 'bias'):
+                        # Simulation de la mise à jour des poids
+                        self.optimizer.update_weights(layer.weights, loss_gradient)
+                        self.optimizer.update_bias(layer.bias, loss_gradient)
+            
+            # Affichage du progrès
+            if verbose and (epoch + 1) % 20 == 0:
+                avg_loss = total_loss / n_batches
+                print(f"Époque {epoch + 1}/{epochs}, Perte: {avg_loss:.4f}")
+        
+        self.fitted = True
+    
+    def predict(self, X):
+        """
+        Fait des prédictions.
+        """
+        if not self.fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        predictions = self.forward(X)
+        
+        # Conversion en classes pour classification binaire
+        if len(predictions[0]) == 1:  # Classification binaire
+            return [1 if pred[0] > 0.5 else 0 for pred in predictions]
+        else:  # Classification multi-classe
+            return [predictions[i].index(max(predictions[i])) for i in range(len(predictions))]
+    
+    def predict_proba(self, X):
+        """
+        Retourne les probabilités de prédiction.
+        """
+        if not self.fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        return self.forward(X)
+
+# ============================================================================
+# 4. Entraînement du modèle de classification
+# ============================================================================
+
+print("\n=== Entraînement du modèle de classification ===")
+
+# Création du modèle
+classifier = SimpleNeuralNetwork(
+    input_size=len(X_train_class_norm[0]),
+    hidden_sizes=[64, 32],
+    output_size=1,  # Classification binaire
+    activation="relu"
+)
+
+# Compilation
+classifier.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    learning_rate=0.001
+)
+
+# Entraînement
+classifier.fit(
+    X_train_class_norm,
+    [[y] for y in y_train_class],  # Conversion en format attendu
+    epochs=100,
+    batch_size=32,
+    verbose=True
+)
+
+# ============================================================================
+# 5. Évaluation du modèle
+# ============================================================================
+
+print("\n=== Évaluation du modèle de classification ===")
+
+# Prédictions
+y_pred_class = classifier.predict(X_test_class_norm)
+
+# Calcul des métriques
+accuracy = Accuracy()
+f1 = F1Score()
+report = ClassificationReport()
+
+accuracy_score = accuracy.compute(y_test_class, y_pred_class)
+f1_score = f1.compute(y_test_class, y_pred_class)
+full_report = report.compute(y_test_class, y_pred_class)
+
+print(f"Précision (Accuracy): {accuracy_score:.4f}")
+print(f"F1-Score: {f1_score:.4f}")
+print("\nRapport de classification complet:")
+for metric, value in full_report.items():
+    if isinstance(value, dict):
+        print(f"{metric}:")
+        for sub_metric, sub_value in value.items():
+            print(f"  {sub_metric}: {sub_value}")
+    else:
+        print(f"{metric}: {value}")
+
+# ============================================================================
+# 6. Utilisation des pipelines ML
+# ============================================================================
+
+print("\n=== Utilisation des pipelines ML ===")
+
+# Création d'un pipeline simple
+class SimplePreprocessor:
+    """
+    Préprocesseur simple pour démonstration.
+    """
+    
+    def __init__(self):
+        self.fitted = False
+        self.min_vals = None
+        self.max_vals = None
+    
+    def fit(self, X, y=None):
+        # Calcul des min/max pour normalisation
+        self.min_vals = [min(X[i][j] for i in range(len(X))) for j in range(len(X[0]))]
+        self.max_vals = [max(X[i][j] for i in range(len(X))) for j in range(len(X[0]))]
+        self.fitted = True
+        return self
+    
+    def transform(self, X):
+        if not self.fitted:
+            raise ValueError("Preprocessor must be fitted before transform")
+        
+        # Normalisation min-max
+        normalized = []
+        for sample in X:
+            norm_sample = []
+            for j, val in enumerate(sample):
+                if self.max_vals[j] != self.min_vals[j]:
+                    norm_val = (val - self.min_vals[j]) / (self.max_vals[j] - self.min_vals[j])
+                else:
+                    norm_val = 0.0
+                norm_sample.append(norm_val)
+            normalized.append(norm_sample)
+        
+        return normalized
+
+# Création du pipeline
+pipeline = create_pipeline(
+    ("preprocessor", SimplePreprocessor()),
+    ("classifier", classifier)
+)
+
+print("Pipeline créé avec succès!")
+print(f"Étapes du pipeline: {[step[0] for step in pipeline.steps]}")
+
+# ============================================================================
+# 7. Validation croisée
+# ============================================================================
+
+print("\n=== Validation croisée ===")
+
+# Création d'un modèle simple pour la validation
+class SimpleClassifier:
+    """
+    Classificateur simple pour démonstration de la validation croisée.
+    """
+    
+    def __init__(self):
+        self.fitted = False
+        self.weights = None
+    
+    def fit(self, X, y):
+        # Simulation d'un entraînement simple
+        n_features = len(X[0])
+        self.weights = [0.1] * n_features  # Poids initiaux
+        self.fitted = True
+    
+    def predict(self, X):
+        if not self.fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        predictions = []
+        for sample in X:
+            # Prédiction simple basée sur la somme pondérée
+            score = sum(w * x for w, x in zip(self.weights, sample))
+            predictions.append(1 if score > 0 else 0)
+        
+        return predictions
+
+# Validation croisée
+simple_model = SimpleClassifier()
+validator = ModelValidator(simple_model, cv_folds=5)
+
+validation_results = validator.validate(
+    X_train_class_norm,
+    y_train_class,
+    metrics=['accuracy']
+)
+
+print("Résultats de la validation croisée:")
+for metric, results in validation_results.items():
+    print(f"{metric}:")
+    print(f"  Moyenne: {results['mean']:.4f}")
+    print(f"  Écart-type: {results['std']:.4f}")
+    print(f"  Scores: {[f'{score:.3f}' for score in results['scores']]}")
+
+# ============================================================================
+# 8. Informations sur la bibliothèque
+# ============================================================================
+
+print("\n=== Informations sur la bibliothèque ML ===")
+
+ml_info = ml.get_ml_info()
+print(f"Version: {ml_info['version']}")
+print(f"Auteur: {ml_info['author']}")
+print(f"Description: {ml_info['description']}")
+print("\nFonctionnalités disponibles:")
+for feature in ml_info['features']:
+    print(f"  - {feature}")
+
+print("\nCouches disponibles:")
+for layer in ml_info['available_layers']:
+    print(f"  - {layer}")
+
+print("\nOptimiseurs disponibles:")
+for optimizer in ml_info['available_optimizers']:
+    print(f"  - {optimizer}")
+
+print("\nFonctions de perte disponibles:")
+for loss in ml_info['available_losses']:
+    print(f"  - {loss}")
+
+print("\nMétriques disponibles:")
+for category, metrics in ml_info['available_metrics'].items():
+    print(f"  {category.capitalize()}:")
+    for metric in metrics:
+        print(f"    - {metric}")
+
+# ============================================================================
+# 9. Exemple de régression
+# ============================================================================
+
+print("\n=== Exemple de régression ===")
+
+# Création d'un modèle de régression simple
+class SimpleRegressor:
+    """
+    Régresseur simple pour démonstration.
+    """
+    
+    def __init__(self):
+        self.fitted = False
+        self.weights = None
+        self.bias = 0.0
+    
+    def fit(self, X, y):
+        # Régression linéaire simple (approximation)
+        n_features = len(X[0])
+        self.weights = [0.1] * n_features
+        self.bias = sum(y) / len(y)  # Moyenne comme biais initial
+        self.fitted = True
+    
+    def predict(self, X):
+        if not self.fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        predictions = []
+        for sample in X:
+            pred = sum(w * x for w, x in zip(self.weights, sample)) + self.bias
+            predictions.append(pred)
+        
+        return predictions
+
+# Entraînement et évaluation
+regressor = SimpleRegressor()
+regressor.fit(X_train_reg_norm, y_train_reg)
+y_pred_reg = regressor.predict(X_test_reg_norm)
+
+# Évaluation avec les métriques de régression
+from ml.metrics import MeanSquaredError, MeanAbsoluteError, R2Score
+
+mse = MeanSquaredError()
+mae = MeanAbsoluteError()
+r2 = R2Score()
+
+mse_score = mse.compute(y_test_reg, y_pred_reg)
+mae_score = mae.compute(y_test_reg, y_pred_reg)
+r2_score = r2.compute(y_test_reg, y_pred_reg)
+
+print(f"Erreur quadratique moyenne (MSE): {mse_score:.4f}")
+print(f"Erreur absolue moyenne (MAE): {mae_score:.4f}")
+print(f"Coefficient de détermination (R²): {r2_score:.4f}")
+
+# ============================================================================
+# 10. Conclusion
+# ============================================================================
+
+print("\n=== Conclusion ===")
+print("Cet exemple a démontré les principales fonctionnalités de la bibliothèque ML d'ai'lang:")
+print("✓ Création et entraînement de réseaux de neurones")
+print("✓ Utilisation de différents optimiseurs et fonctions de perte")
+print("✓ Évaluation avec des métriques complètes")
+print("✓ Pipelines ML pour l'enchaînement d'opérations")
+print("✓ Validation croisée pour l'évaluation robuste")
+print("✓ Support de la classification et de la régression")
+print("✓ Préprocessing et normalisation des données")
+print("\nLa bibliothèque ML d'ai'lang offre tous les outils nécessaires")
+print("pour développer des solutions d'apprentissage automatique complètes!")

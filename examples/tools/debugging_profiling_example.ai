@@ -1,0 +1,423 @@
+# Exemple d'utilisation des outils de débogage et de profilage d'ai'lang
+# Ce fichier démontre l'utilisation du débogueur et du profiler intégrés
+
+# Importation des outils de développement
+from tools import (
+    # Débogueur
+    create_debugger, start_debug_session, debug_trace, quick_debug,
+    BreakpointType, DebuggerState,
+    
+    # Profiler
+    create_profiler, profile_function, profile_block, quick_profile,
+    start_profiling, stop_profiling, benchmark, performance_test,
+    
+    # Utilitaires
+    get_tools_info
+)
+
+# Importation des bibliothèques ML et NLP pour les exemples
+from libs.ml import create_layer, SGD, MeanSquaredError
+from libs.nlp import tokenize, remove_stopwords, detect_language
+
+import time
+import random
+
+# ============================================================================
+# Exemples de débogage
+# ============================================================================
+
+print("=" * 60)
+print("EXEMPLES DE DÉBOGAGE AI'LANG")
+print("=" * 60)
+
+# Fonction simple pour démonstration du débogage
+@debug_trace
+def fibonacci(n):
+    """Calcule le n-ième nombre de Fibonacci (version récursive)."""
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Fonction avec bug intentionnel pour démonstration
+@debug_trace
+def buggy_division(a, b):
+    """Fonction avec un bug de division par zéro."""
+    result = a / b  # Bug potentiel si b = 0
+    return result * 2
+
+# Fonction complexe pour démonstration avancée
+@debug_trace
+def complex_calculation(data):
+    """Effectue un calcul complexe sur des données."""
+    total = 0
+    for i, value in enumerate(data):
+        if i % 2 == 0:
+            total += value ** 2
+        else:
+            total -= value / 2
+    
+    # Simulation d'un traitement coûteux
+    time.sleep(0.01)
+    
+    return total / len(data) if data else 0
+
+print("\n1. Débogage basique avec trace automatique")
+print("-" * 40)
+
+# Exemple 1: Débogage basique
+print("Calcul de fibonacci(5):")
+result = fibonacci(5)
+print(f"Résultat: {result}")
+
+print("\n2. Débogage avec points d'arrêt programmatiques")
+print("-" * 40)
+
+# Exemple 2: Débogage avec débogueur personnalisé
+debugger = create_debugger()
+
+# Ajout de points d'arrêt
+file_path = "debugging_profiling_example.ai"
+bp1 = debugger.add_breakpoint(file_path, 45, BreakpointType.LINE)
+bp2 = debugger.add_breakpoint(file_path, 52, BreakpointType.CONDITIONAL, "i > 3")
+
+print(f"Points d'arrêt ajoutés: {bp1}, {bp2}")
+print("Points d'arrêt configurés:")
+for bp in debugger.list_breakpoints():
+    print(f"  - ID {bp.id}: {bp.file_path}:{bp.line_number} ({bp.breakpoint_type.value})")
+    if bp.condition:
+        print(f"    Condition: {bp.condition}")
+
+print("\n3. Débogage avec observateurs de variables")
+print("-" * 40)
+
+# Exemple 3: Observation de variables
+debugger.add_variable_watcher("total", 0)
+debugger.add_variable_watcher("i", 0)
+
+test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+print(f"Calcul complexe sur {test_data}:")
+result = complex_calculation(test_data)
+print(f"Résultat: {result:.2f}")
+
+print("\n4. Gestion d'exceptions avec le débogueur")
+print("-" * 40)
+
+# Exemple 4: Gestion d'exceptions
+try:
+    result = buggy_division(10, 0)  # Provoque une division par zéro
+except ZeroDivisionError as e:
+    print(f"Exception capturée: {e}")
+    debugger.handle_exception(e, file_path, 35)
+    print("Informations de débogage:")
+    debug_info = debugger.get_debug_info()
+    print(f"  État: {debug_info['state']}")
+    print(f"  Pile d'appels: {len(debug_info['call_stack'])} frames")
+
+print("\n5. Utilisation du décorateur quick_debug")
+print("-" * 40)
+
+# Exemple 5: Débogage rapide avec décorateur
+@quick_debug(breakpoints=[75, 80], interactive=False)
+def sample_nlp_processing(text):
+    """Traitement NLP simple pour démonstration."""
+    # Détection de langue
+    language = detect_language(text)
+    print(f"Langue détectée: {language}")
+    
+    # Tokenisation
+    tokens = tokenize(text)
+    print(f"Tokens: {tokens}")
+    
+    # Suppression des mots vides
+    filtered_tokens = remove_stopwords(tokens, language)
+    print(f"Tokens filtrés: {filtered_tokens}")
+    
+    return {
+        "language": language,
+        "tokens": tokens,
+        "filtered_tokens": filtered_tokens,
+        "word_count": len(filtered_tokens)
+    }
+
+text_sample = "Hello world! This is a sample text for natural language processing."
+result = sample_nlp_processing(text_sample)
+print(f"Résultat du traitement NLP: {result}")
+
+# ============================================================================
+# Exemples de profilage
+# ============================================================================
+
+print("\n\n" + "=" * 60)
+print("EXEMPLES DE PROFILAGE AI'LANG")
+print("=" * 60)
+
+# Fonctions pour démonstration du profilage
+def inefficient_sort(data):
+    """Tri à bulles inefficace pour démonstration."""
+    n = len(data)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if data[j] > data[j + 1]:
+                data[j], data[j + 1] = data[j + 1], data[j]
+    return data
+
+def memory_intensive_operation():
+    """Opération consommatrice de mémoire."""
+    # Création de grandes listes
+    big_list = [random.random() for _ in range(100000)]
+    
+    # Traitement des données
+    processed = [x ** 2 + x / 2 for x in big_list]
+    
+    # Simulation d'un calcul complexe
+    result = sum(processed) / len(processed)
+    
+    return result
+
+def cpu_intensive_operation(iterations=1000):
+    """Opération consommatrice de CPU."""
+    total = 0
+    for i in range(iterations):
+        for j in range(100):
+            total += (i * j) ** 0.5
+    return total
+
+print("\n1. Profilage basique avec décorateur")
+print("-" * 40)
+
+# Exemple 1: Profilage avec décorateur
+@profile_function("inefficient_sort_demo")
+def sort_demo():
+    data = [random.randint(1, 1000) for _ in range(100)]
+    return inefficient_sort(data.copy())
+
+# Démarrage du profilage global
+start_profiling(track_memory=True, track_cpu=True, detailed=True)
+
+print("Exécution du tri inefficace...")
+sorted_data = sort_demo()
+print(f"Données triées (premiers 10): {sorted_data[:10]}")
+
+print("\n2. Profilage de blocs de code")
+print("-" * 40)
+
+# Exemple 2: Profilage de blocs
+with profile_block("memory_intensive_block"):
+    print("Exécution d'opération consommatrice de mémoire...")
+    result = memory_intensive_operation()
+    print(f"Résultat: {result:.6f}")
+
+with profile_block("cpu_intensive_block"):
+    print("Exécution d'opération consommatrice de CPU...")
+    result = cpu_intensive_operation(500)
+    print(f"Résultat: {result:.2f}")
+
+print("\n3. Profilage d'algorithmes ML")
+print("-" * 40)
+
+# Exemple 3: Profilage d'algorithmes ML
+with profile_block("ml_training_simulation"):
+    # Simulation d'entraînement de réseau de neurones
+    print("Simulation d'entraînement ML...")
+    
+    # Création de couches
+    layer1 = create_layer("dense", input_size=10, output_size=20, activation="relu")
+    layer2 = create_layer("dense", input_size=20, output_size=1, activation="sigmoid")
+    
+    # Simulation de données d'entraînement
+    for epoch in range(50):
+        # Simulation de forward pass
+        for batch in range(10):
+            # Données factices
+            input_data = [random.random() for _ in range(10)]
+            target = random.random()
+            
+            # Forward pass simulé
+            output1 = layer1.forward(input_data)
+            output2 = layer2.forward(output1)
+            
+            # Calcul de perte simulé
+            loss = (output2[0] - target) ** 2
+        
+        if epoch % 10 == 0:
+            print(f"  Époque {epoch}: perte simulée = {loss:.4f}")
+    
+    print("Entraînement ML simulé terminé")
+
+# Arrêt du profilage et génération du rapport
+metrics = stop_profiling()
+
+print("\n4. Analyse des résultats de profilage")
+print("-" * 40)
+
+# Affichage des métriques principales
+print(f"Temps d'exécution total: {metrics.execution_time:.3f}s")
+print(f"Pic mémoire: {metrics.memory_peak / 1024 / 1024:.1f} MB")
+print(f"Mémoire moyenne: {metrics.memory_average / 1024 / 1024:.1f} MB")
+print(f"Pic CPU: {metrics.cpu_peak:.1f}%")
+print(f"CPU moyen: {metrics.cpu_average:.1f}%")
+print(f"Appels de fonction: {metrics.function_calls:,}")
+
+# Obtention du profiler pour analyse détaillée
+profiler = get_profiler()
+
+# Top fonctions
+print("\nTop 5 des fonctions les plus coûteuses:")
+top_functions = profiler.get_top_functions(5, "total_time")
+for i, func in enumerate(top_functions, 1):
+    print(f"{i}. {func.name}: {func.total_time:.3f}s ({func.call_count} appels)")
+
+# Points chauds
+hotspots = profiler.get_hotspots(0.001)
+if hotspots:
+    print("\nPoints chauds détectés:")
+    for hotspot in hotspots:
+        percentage = (hotspot.total_time / metrics.execution_time) * 100
+        print(f"• {hotspot.name}: {percentage:.1f}% du temps total")
+
+# Suggestions d'optimisation
+suggestions = profiler.suggest_optimizations()
+print("\nSuggestions d'optimisation:")
+for suggestion in suggestions:
+    print(f"• {suggestion}")
+
+print("\n5. Benchmark de fonctions")
+print("-" * 40)
+
+# Exemple 5: Benchmark comparatif
+print("Benchmark: tri à bulles vs tri Python natif")
+
+# Données de test
+test_data = [random.randint(1, 1000) for _ in range(50)]
+
+# Benchmark du tri à bulles
+bubble_results = benchmark(inefficient_sort, test_data.copy(), iterations=10)
+print(f"Tri à bulles - Temps moyen: {bubble_results['average_time']:.6f}s")
+
+# Benchmark du tri natif
+native_results = benchmark(sorted, test_data.copy(), iterations=10)
+print(f"Tri natif - Temps moyen: {native_results['average_time']:.6f}s")
+
+# Comparaison
+speedup = bubble_results['average_time'] / native_results['average_time']
+print(f"Le tri natif est {speedup:.1f}x plus rapide")
+
+print("\n6. Test de performance complet")
+print("-" * 40)
+
+# Exemple 6: Test de performance complet
+def test_function():
+    """Fonction de test pour performance_test."""
+    data = [random.random() for _ in range(1000)]
+    return sum(x ** 2 for x in data)
+
+print("Test de performance complet:")
+perf_results = performance_test(test_function, iterations=100, warmup=5)
+
+print(f"\nScore de performance: {perf_results['performance_score']:.1f}/100")
+
+print("\n7. Utilisation du décorateur quick_profile")
+print("-" * 40)
+
+# Exemple 7: Profilage rapide
+@quick_profile(report_format="text", detailed=True)
+def nlp_pipeline_demo(texts):
+    """Pipeline NLP pour démonstration du profilage."""
+    results = []
+    
+    for text in texts:
+        # Traitement de chaque texte
+        language = detect_language(text)
+        tokens = tokenize(text)
+        filtered = remove_stopwords(tokens, language)
+        
+        results.append({
+            "text": text,
+            "language": language,
+            "token_count": len(tokens),
+            "filtered_count": len(filtered)
+        })
+    
+    return results
+
+# Données de test
+sample_texts = [
+    "Hello world! This is English text.",
+    "Bonjour le monde! Ceci est du texte français.",
+    "Hola mundo! Este es texto en español.",
+    "The quick brown fox jumps over the lazy dog.",
+    "Intelligence artificielle et apprentissage automatique."
+]
+
+print("Exécution du pipeline NLP avec profilage:")
+nlp_results = nlp_pipeline_demo(sample_texts)
+print(f"Traitement terminé pour {len(nlp_results)} textes")
+
+print("\n8. Export et sauvegarde des résultats")
+print("-" * 40)
+
+# Exemple 8: Export des résultats
+profiler = create_profiler()
+profiler.start_profiling()
+
+# Simulation d'une tâche
+with profiler.profile_block("export_demo"):
+    time.sleep(0.1)  # Simulation
+    result = sum(range(1000))
+
+metrics = profiler.stop_profiling()
+
+# Génération de rapports dans différents formats
+print("Génération des rapports:")
+
+# Rapport texte
+text_report = profiler.generate_report("text")
+with open("profile_report.txt", "w", encoding="utf-8") as f:
+    f.write(text_report)
+print("• Rapport texte sauvegardé: profile_report.txt")
+
+# Rapport JSON
+json_report = profiler.generate_report("json")
+with open("profile_report.json", "w", encoding="utf-8") as f:
+    f.write(json_report)
+print("• Rapport JSON sauvegardé: profile_report.json")
+
+# Rapport HTML
+html_report = profiler.generate_report("html")
+with open("profile_report.html", "w", encoding="utf-8") as f:
+    f.write(html_report)
+print("• Rapport HTML sauvegardé: profile_report.html")
+
+# ============================================================================
+# Informations sur les outils
+# ============================================================================
+
+print("\n\n" + "=" * 60)
+print("INFORMATIONS SUR LES OUTILS AI'LANG")
+print("=" * 60)
+
+# Affichage des informations sur les outils
+tools_info = get_tools_info()
+print(f"Version: {tools_info['version']}")
+print(f"Auteur: {tools_info['author']}")
+print(f"Description: {tools_info['description']}")
+
+print("\nOutils disponibles:")
+for tool_name, tool_info in tools_info['tools'].items():
+    print(f"\n{tool_name.upper()}:")
+    print(f"  Description: {tool_info['description']}")
+    print("  Fonctionnalités:")
+    for feature in tool_info['features']:
+        print(f"    • {feature}")
+
+print("\n" + "=" * 60)
+print("DÉMONSTRATION TERMINÉE")
+print("=" * 60)
+print("\nCette démonstration a montré:")
+print("• Débogage avec points d'arrêt et observation de variables")
+print("• Profilage de performance avec analyse mémoire et CPU")
+print("• Détection de points chauds et suggestions d'optimisation")
+print("• Benchmarking et tests de performance")
+print("• Génération de rapports dans différents formats")
+print("• Intégration avec les bibliothèques ML et NLP d'ai'lang")
+print("\nLes outils de développement ai'lang sont prêts à l'utilisation!")
